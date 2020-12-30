@@ -7,6 +7,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,12 +27,17 @@ public class MainActivity extends AppCompatActivity {
     private static final String[] REQUESTED_PERMISSIONS =
             {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
 
+    // View
     private ImageView imageViewJoinBtn;
     private ImageView imageViewAudioBtn;
     private ImageView imageViewLeaveBtn;
     private ImageView imageViewCameraBtn;
 
-    public static final String LOG_TAG = "LOG_TAG";
+
+    private Context context = MainActivity.this;
+    public static final String LOG_CAT = "LOG_CAT";
+
+    // engine and event handler
 
     private RtcEngine mRtcEngine;
     private final IRtcEngineEventHandler mRtcEventHandler = new IRtcEngineEventHandler() {
@@ -45,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         setupSession();
 
-                        setUpLocalVideoFeed();
+                        setupLocalVideoFeed();
 
 //                        mRtcEngine.muteLocalVideoStream(false);
 
@@ -72,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.i("agora","First remote video decoded, uid: " + (uid & 0xFFFFFFFFL));
+//                    Log.i("agora","First remote video decoded, uid: " + (uid & 0xFFFFFFFFL));
                     try {
                         setupRemoteVideoFeed(uid);
                     } catch(Exception e) {
@@ -106,8 +112,24 @@ public class MainActivity extends AppCompatActivity {
         imageViewJoinBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(LOG_CAT, "Press join btn");
                 if (mRtcEngine != null) {
+
                     joinChannel();
+                }
+                // on second start up, check for permission, if granted, init engine
+                else {
+                    if(ContextCompat.checkSelfPermission(context, REQUESTED_PERMISSIONS[0])
+                            + ContextCompat.checkSelfPermission(
+                            context, REQUESTED_PERMISSIONS[1])
+                            == PackageManager.PERMISSION_GRANTED) {
+                        try {
+                        initAgoraEngine();
+                        joinChannel();}
+                        catch (Exception e) {
+                            Log.e(LOG_CAT, "error init engine");
+                        }
+                    }
                 }
 
             }
@@ -146,12 +168,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        Log.d(LOG_CAT, "ON Destroy Activity");
         super.onDestroy();
         RtcEngine.destroy();
         mRtcEngine = null;
     }
 
     public void checkSelfPermission() {
+        Log.d(LOG_CAT, "checkSelfPermission");
         // granted is 0, not granted is -1
         if(ContextCompat.checkSelfPermission(this, REQUESTED_PERMISSIONS[0])
                 + ContextCompat.checkSelfPermission(
@@ -168,18 +192,20 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d(LOG_CAT, "check Permission Result");
         switch (requestCode) {
             case PERMISSION_REQ_ID: {
                 if (grantResults[0] + grantResults[1] != PackageManager.PERMISSION_GRANTED) {
-                    Log.i(LOG_TAG, "Need permissions " + Manifest.permission.RECORD_AUDIO + "/" + Manifest.permission.CAMERA);
+//                    Log.i(LOG_CAT, "Need permissions " + Manifest.permission.RECORD_AUDIO + "/" + Manifest.permission.CAMERA);
                 }
                 // only initialize agora engine if both permissions are granted
                 else {
 
                     try {
                         initAgoraEngine();
+
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, Log.getStackTraceString(e));
+                        Log.e(LOG_CAT, "error init engine");
 
                         throw new RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e));
                     }
@@ -193,6 +219,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void initAgoraEngine() throws Exception{
+        Log.d(LOG_CAT, "INIT ENGINE");
         mRtcEngine = RtcEngine.create(getBaseContext(), getString(R.string.agora_app_id), mRtcEventHandler);
     }
 
@@ -213,10 +240,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void leaveChannel() {
+        Log.d(LOG_CAT, "leave channel");
         mRtcEngine.leaveChannel();
     }
 
-    private void setUpLocalVideoFeed() {
+    private void setupLocalVideoFeed() {
+        Log.d(LOG_CAT, "Set up Local Video Feed");
         FrameLayout videoContainer = findViewById(R.id.floating_video_container);
         SurfaceView videoSurface = RtcEngine.CreateRendererView(getBaseContext());
         // put the surface view in front so it becomes visible
@@ -229,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
 
     // uid of the remote user
     private void setupRemoteVideoFeed(int uid) {
-        Log.i(LOG_TAG, "setupRemoteVideoFeed");
+//        Log.i(LOG_CAT, "setupRemoteVideoFeed");
         FrameLayout videoContainer = findViewById(R.id.bg_video_container);
         SurfaceView videoSurface = RtcEngine.CreateRendererView(getBaseContext());
         videoContainer.addView(videoSurface);
