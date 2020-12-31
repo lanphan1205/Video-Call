@@ -69,24 +69,39 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // uid of remote user who sends the first frame of video
+        // define what happen to the remote user video stream to local user
         @Override
         public void onRemoteVideoStateChanged(int uid, int state, int reason, int elapsed) {
-            if (state == Constants.REMOTE_VIDEO_STATE_STARTING && reason == Constants.REMOTE_VIDEO_STATE_REASON_LOCAL_UNMUTED) {
+            if (state == Constants.REMOTE_VIDEO_STATE_STARTING && reason == Constants.REMOTE_AUDIO_REASON_INTERNAL) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+//                    Log.i("agora","First remote video decoded, uid: " + (uid & 0xFFFFFFFFL));
+                        try {
+                            Log.d(LOG_CAT, "state: " + String.valueOf(state) + ", " + "reason: " + String.valueOf(reason));
+                            setupRemoteVideoFeed(uid);
+                        } catch(Exception e) {
+                            System.out.println("Error Set Up Remote Video: " + e.toString());
+                        }
+
+
+                    }
+                });
+            }
+
+            if (state != 1 && reason != 0) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(LOG_CAT, "state: " + String.valueOf(state) + ", " + "reason: " + String.valueOf(reason));
+                    }
+                });
 
             }
 
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-//                    Log.i("agora","First remote video decoded, uid: " + (uid & 0xFFFFFFFFL));
-                    try {
-                        setupRemoteVideoFeed(uid);
-                    } catch(Exception e) {
-                        System.out.println("Error Set Up Remote Video: " + e.toString());
-                    }
 
-                }
-            });
+
+
 
         }
     };
@@ -145,10 +160,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         imageViewCameraBtn.setOnClickListener(new View.OnClickListener() {
+            boolean videoMuted = false;
             @Override
             public void onClick(View v) {
                 if (mRtcEngine != null) {
-
+                    videoMuted = !videoMuted;
+                    mRtcEngine.muteLocalVideoStream(videoMuted);
                 }
             }
         });
@@ -258,7 +275,7 @@ public class MainActivity extends AppCompatActivity {
 
     // uid of the remote user
     private void setupRemoteVideoFeed(int uid) {
-//        Log.i(LOG_CAT, "setupRemoteVideoFeed");
+        Log.i(LOG_CAT, "setupRemoteVideoFeed");
         FrameLayout videoContainer = findViewById(R.id.bg_video_container);
         SurfaceView videoSurface = RtcEngine.CreateRendererView(getBaseContext());
         videoContainer.addView(videoSurface);
