@@ -37,6 +37,10 @@ public class MainActivity extends AppCompatActivity {
     private Context context = MainActivity.this;
     public static final String LOG_CAT = "LOG_CAT";
 
+    // Click Logic
+    private boolean videoMuted;
+    private boolean audioMuted;
+
     // engine and event handler
 
     private RtcEngine mRtcEngine;
@@ -51,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         setupSession();
 
-                        setupLocalVideoFeed();
+                        onLocalUserJoinChannelSuccess();
 
 //                        mRtcEngine.muteLocalVideoStream(false);
 
@@ -63,8 +67,14 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onLeaveChannel(RtcStats rtcStats) {
-            RtcEngine.destroy();
+//            RtcEngine.destroy();
             mRtcEngine = null;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    onLocalUserLeaveChannel();
+                }
+            });
 
         }
 
@@ -72,24 +82,66 @@ public class MainActivity extends AppCompatActivity {
         // define what happen to the remote user video stream to local user
         @Override
         public void onRemoteVideoStateChanged(int uid, int state, int reason, int elapsed) {
-            if (state == Constants.REMOTE_VIDEO_STATE_STARTING && reason == Constants.REMOTE_AUDIO_REASON_INTERNAL) {
+            // On first frame of remote video stream decoded and video state changes (first time video enabled)
+            if (state == Constants.REMOTE_VIDEO_STATE_STARTING && reason == Constants.REMOTE_VIDEO_STATE_REASON_INTERNAL) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
 //                    Log.i("agora","First remote video decoded, uid: " + (uid & 0xFFFFFFFFL));
-                        try {
-                            Log.d(LOG_CAT, "state: " + String.valueOf(state) + ", " + "reason: " + String.valueOf(reason));
-                            setupRemoteVideoFeed(uid);
-                        } catch(Exception e) {
-                            System.out.println("Error Set Up Remote Video: " + e.toString());
-                        }
+//                        try {
+//                            Log.d(LOG_CAT, "state: " + String.valueOf(state) + ", " + "reason: " + String.valueOf(reason));
+//
+//
+//                        } catch(Exception e) {
+//                            System.out.println("Error Set Up Remote Video: " + e.toString());
+//                        }
 
+                        // the line below is important to remove the cover imageView when remote user join channel
+                        onRemoteUserJoinChannelSuccess();
+
+                        setupRemoteVideoFeed(uid);
 
                     }
                 });
             }
 
-            if (state != 1 && reason != 0) {
+            // On remote user muted video
+            else if(state == Constants.REMOTE_VIDEO_STATE_STOPPED && reason == Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+//                        onPauseLocalVideoFeed();
+                        onPauseRemoteVideoFeed();
+                    }
+                });
+
+            }
+
+            // or remote user leaves channel
+            else if (state == Constants.REMOTE_VIDEO_STATE_STOPPED && reason == Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_OFFLINE) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // wait for user to come online again
+                        onRemoteUserLeaveChannel();
+                    }
+                });
+            }
+
+            // On remote user unmute video
+            else if(state == Constants.REMOTE_VIDEO_STATE_DECODING && reason == Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_UNMUTED) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+//                        onResumeLocalVideoFeed();
+                        onResumeRemoteVideoFeed();
+                    }
+                });
+            }
+
+            // other states of remote video stream
+
+            else {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -98,10 +150,6 @@ public class MainActivity extends AppCompatActivity {
                 });
 
             }
-
-
-
-
 
         }
     };
@@ -114,8 +162,13 @@ public class MainActivity extends AppCompatActivity {
         imageViewJoinBtn = findViewById(R.id.joinBtn);
 
         imageViewAudioBtn = findViewById(R.id.audioBtn);
+        imageViewAudioBtn.setImageResource(R.drawable.icons8_unmute_96);
+
         imageViewLeaveBtn = findViewById(R.id.leaveBtn);
+        imageViewLeaveBtn.setImageResource(R.drawable.icons8_cross_mark_96);
+
         imageViewCameraBtn = findViewById(R.id.cameraBtn);
+        imageViewCameraBtn.setImageResource(R.drawable.icons8_video_call_96);
 
 
         // prompt user to allow permission to access audio and camera
@@ -140,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
                             == PackageManager.PERMISSION_GRANTED) {
                         try {
                         initAgoraEngine();
+//                        setupSession();
                         joinChannel();}
                         catch (Exception e) {
                             Log.e(LOG_CAT, "error init engine");
@@ -160,12 +214,25 @@ public class MainActivity extends AppCompatActivity {
         });
 
         imageViewCameraBtn.setOnClickListener(new View.OnClickListener() {
-            boolean videoMuted = false;
+            // control local video state
+            // setupSession() sets videoMuted to false at the start
+
             @Override
             public void onClick(View v) {
                 if (mRtcEngine != null) {
                     videoMuted = !videoMuted;
                     mRtcEngine.muteLocalVideoStream(videoMuted);
+                    // video muted
+                    if (videoMuted) {
+                        onPauseLocalVideoFeed();
+                        imageViewCameraBtn.setImageResource(R.drawable.icons8_no_video_96);
+                    }
+                    // video not muted
+                    else {
+                        onResumeLocalVideoFeed();
+                        imageViewCameraBtn.setImageResource(R.drawable.icons8_video_call_96);
+                    }
+
                 }
             }
         });
@@ -243,7 +310,14 @@ public class MainActivity extends AppCompatActivity {
     private void setupSession() {
         mRtcEngine.setChannelProfile(Constants.CHANNEL_PROFILE_COMMUNICATION);
 
+
         mRtcEngine.enableVideo();
+
+
+
+        // by default videoMuted is assigned false
+        // the line below to dictates whether user joins with video muted or not
+        videoMuted = false;
 
         mRtcEngine.setVideoEncoderConfiguration(new VideoEncoderConfiguration(new VideoEncoderConfiguration.VideoDimensions(1080, 2220),
                 VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_30,
@@ -271,9 +345,26 @@ public class MainActivity extends AppCompatActivity {
         videoContainer.addView(videoSurface);
         // set up local video into the surface view
         mRtcEngine.setupLocalVideo(new VideoCanvas(videoSurface, VideoCanvas.RENDER_MODE_FIT, 0));
+        // Make the join button invisible
+        ImageView joinBtn = findViewById(R.id.joinBtn);
+        joinBtn.setVisibility(View.INVISIBLE);
+    }
+
+    private void onPauseLocalVideoFeed() {
+        FrameLayout videoContainer = findViewById(R.id.floating_video_container);
+        ImageView noCamera = new ImageView(context);
+        noCamera.setBackgroundResource(R.color.black);
+        videoContainer.addView(noCamera);
+    }
+
+    private void onResumeLocalVideoFeed() {
+        FrameLayout videoContainer = findViewById(R.id.floating_video_container);
+        ImageView noCamera = (ImageView) videoContainer.getChildAt(1);
+        videoContainer.removeView(noCamera);
     }
 
     // uid of the remote user
+    // always add the surface view as the first child of the video container
     private void setupRemoteVideoFeed(int uid) {
         Log.i(LOG_CAT, "setupRemoteVideoFeed");
         FrameLayout videoContainer = findViewById(R.id.bg_video_container);
@@ -281,5 +372,65 @@ public class MainActivity extends AppCompatActivity {
         videoContainer.addView(videoSurface);
         mRtcEngine.setupRemoteVideo(new VideoCanvas(videoSurface, VideoCanvas.RENDER_MODE_FIT, uid));
 //        mRtcEngine.setRemoteSubscribeFallbackOption(io.agora.rtc.Constants.STREAM_FALLBACK_OPTION_AUDIO_ONLY);
+    }
+
+    private void onPauseRemoteVideoFeed() {
+        Log.d(LOG_CAT, "onPauseRemoteVideoFeed");
+        FrameLayout videoContainer = findViewById(R.id.bg_video_container);
+        ImageView noCamera = new ImageView(context);
+        noCamera.setBackgroundResource(R.color.black);
+        videoContainer.addView(noCamera);
+
+    }
+
+    private void onResumeRemoteVideoFeed() {
+        FrameLayout videoContainer = findViewById(R.id.bg_video_container);
+        ImageView noCamera = (ImageView) videoContainer.getChildAt(1);
+        videoContainer.removeView(noCamera);
+
+    }
+
+    private void onRemoteUserLeaveChannel() {
+        FrameLayout videoContainer = findViewById(R.id.bg_video_container);
+        videoContainer.removeAllViews();
+        onWaitForRemoteUser();
+
+    }
+
+    private void onLocalUserLeaveChannel() {
+        FrameLayout localVideoContainer = findViewById(R.id.floating_video_container);
+        localVideoContainer.removeAllViews();
+        FrameLayout remoteVideoContainer = findViewById(R.id.bg_video_container);
+        remoteVideoContainer.removeAllViews();
+        ImageView joinBtn = findViewById(R.id.joinBtn);
+        joinBtn.setVisibility(View.VISIBLE);
+
+        imageViewCameraBtn.setImageResource(R.drawable.icons8_video_call_96);
+    }
+
+    // Waiting for remote user to come online
+    private void onWaitForRemoteUser() {
+        // The same as onPauseRemoteVideoFeed(): use an imageView to cover the remote video container
+        FrameLayout videoContainer = findViewById(R.id.bg_video_container);
+        ImageView noCamera = new ImageView(context);
+        noCamera.setBackgroundResource(R.color.black);
+        videoContainer.addView(noCamera);
+    }
+
+    // When remote user comes online, remove the cover ImageView, so now remote video container has no child
+
+    private void onRemoteUserJoinChannelSuccess() {
+        FrameLayout videoContainer = findViewById(R.id.bg_video_container);
+        ImageView noCamera = (ImageView) videoContainer.getChildAt(0);
+        videoContainer.removeView(noCamera);
+    }
+
+    private void onLocalUserJoinChannelSuccess() {
+        onWaitForRemoteUser();
+        setupLocalVideoFeed();
+        // dictate whether we want to cover the surface view with image view with black bg
+//        if (videoMuted) {
+//            onPauseLocalVideoFeed();
+//        }
     }
 }
