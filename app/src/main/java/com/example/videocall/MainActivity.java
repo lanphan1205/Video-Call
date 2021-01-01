@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     // Permissions
     private static final int PERMISSION_REQ_ID = 22;
     private static final String[] REQUESTED_PERMISSIONS =
-            {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
+            {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.MODIFY_AUDIO_SETTINGS};
 
     // View
     private ImageView imageViewJoinBtn;
@@ -101,6 +101,11 @@ public class MainActivity extends AppCompatActivity {
 
                         setupRemoteVideoFeed(uid);
 
+                        // Suggestion for voice call only, call onPauseRemoteVideoFeed() and onPauseLocalVideoFeed().
+                        // Call mode is dictated by setupSession on launch activity and onclick call button (be it voice call or video call), ideally
+                        // Request video on voice call feature
+
+
                     }
                 });
             }
@@ -152,6 +157,21 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
+
+        @Override
+        public void onAudioRouteChanged(int routing) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(LOG_CAT, "Routing mode: " + String.valueOf(routing));
+                    boolean speakerEnabled = mRtcEngine.isSpeakerphoneEnabled();
+
+                    Log.d(LOG_CAT, "On Audio Route Changed: " + "speaker phone enabled: " + speakerEnabled); // want to see true
+                }
+            });
+        }
+
+
     };
 
     @Override
@@ -190,10 +210,14 @@ public class MainActivity extends AppCompatActivity {
                     if(ContextCompat.checkSelfPermission(context, REQUESTED_PERMISSIONS[0])
                             + ContextCompat.checkSelfPermission(
                             context, REQUESTED_PERMISSIONS[1])
+                            + ContextCompat.checkSelfPermission(
+                            context, REQUESTED_PERMISSIONS[2])
                             == PackageManager.PERMISSION_GRANTED) {
                         try {
                         initAgoraEngine();
 //                        setupSession();
+                            mRtcEngine.setDefaultAudioRoutetoSpeakerphone(true);
+                            audioMuted = false;
                         joinChannel();}
                         catch (Exception e) {
                             Log.e(LOG_CAT, "error init engine");
@@ -208,7 +232,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (mRtcEngine != null) {
+                    audioMuted = !audioMuted;
+                    mRtcEngine.muteLocalAudioStream(audioMuted);
 
+                    if (audioMuted) {
+                        imageViewAudioBtn.setImageResource(R.drawable.icons8_mute_96);
+                    } else {
+                        imageViewAudioBtn.setImageResource(R.drawable.icons8_unmute_96);
+                    }
                 }
             }
         });
@@ -264,6 +295,8 @@ public class MainActivity extends AppCompatActivity {
         if(ContextCompat.checkSelfPermission(this, REQUESTED_PERMISSIONS[0])
                 + ContextCompat.checkSelfPermission(
                 this, REQUESTED_PERMISSIONS[1])
+                + ContextCompat.checkSelfPermission(
+                context, REQUESTED_PERMISSIONS[2])
                 != PackageManager.PERMISSION_GRANTED) {
 //            int grant = ContextCompat.checkSelfPermission(this, REQUESTED_PERMISSIONS[0])
 //                    + ContextCompat.checkSelfPermission(
@@ -294,6 +327,11 @@ public class MainActivity extends AppCompatActivity {
                         throw new RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e));
                     }
 
+                    if (mRtcEngine != null) {
+                        mRtcEngine.setDefaultAudioRoutetoSpeakerphone(true);
+                        audioMuted = false;
+                    }
+
                 }
                 break;
             }
@@ -312,6 +350,10 @@ public class MainActivity extends AppCompatActivity {
 
 
         mRtcEngine.enableVideo();
+
+//        mRtcEngine.enableAudio();
+
+        mRtcEngine.setDefaultAudioRoutetoSpeakerphone(true);
 
 
 
@@ -400,12 +442,15 @@ public class MainActivity extends AppCompatActivity {
     private void onLocalUserLeaveChannel() {
         FrameLayout localVideoContainer = findViewById(R.id.floating_video_container);
         localVideoContainer.removeAllViews();
+
         FrameLayout remoteVideoContainer = findViewById(R.id.bg_video_container);
         remoteVideoContainer.removeAllViews();
+
         ImageView joinBtn = findViewById(R.id.joinBtn);
         joinBtn.setVisibility(View.VISIBLE);
 
         imageViewCameraBtn.setImageResource(R.drawable.icons8_video_call_96);
+        imageViewAudioBtn.setImageResource(R.drawable.icons8_unmute_96);
     }
 
     // Waiting for remote user to come online
@@ -428,9 +473,43 @@ public class MainActivity extends AppCompatActivity {
     private void onLocalUserJoinChannelSuccess() {
         onWaitForRemoteUser();
         setupLocalVideoFeed();
+
+//        mRtcEngine.enableAudio();
         // dictate whether we want to cover the surface view with image view with black bg
 //        if (videoMuted) {
 //            onPauseLocalVideoFeed();
 //        }
+        int volume1 = 400;
+        int volume2 = 400;
+// Sets the playback audio level of all remote users.
+        mRtcEngine.adjustPlaybackSignalVolume(volume1);
+// Sets the playback audio level of a specified remote user.
+//        mRtcEngine.adjustUserPlaybackSignalVolume(uid, volume);
+
+// Sets the volume of the recorded signal.
+        mRtcEngine.adjustRecordingSignalVolume(volume2);
+
+//        mRtcEngine.enableInEarMonitoring(true);
+
+        mRtcEngine.setEnableSpeakerphone(true);
+
+        boolean speakerEnabled = mRtcEngine.isSpeakerphoneEnabled();
+
+        Log.d(LOG_CAT, "speaker phone enabled: " + speakerEnabled); // want to see true
+
+//        mRtcEngine.enableInEarMonitoring(true);
+        int volume3 = 25;
+        // Sets the in-ear monitoring volume.
+        mRtcEngine.setInEarMonitoringVolume(volume3);
+
+//        int volume4 = 400;
+//        mRtcEngine.adjustAudioMixingPlayoutVolume(volume4);
+//
+//        int volume5 = 400;
+//        mRtcEngine.adjustAudioMixingPublishVolume(volume5);
+
+//        mRtcEngine.adjustAudioMixingVolume(400);
+
+
     }
 }
