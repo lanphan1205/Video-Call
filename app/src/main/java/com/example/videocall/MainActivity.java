@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     // Permissions
     private static final int PERMISSION_REQ_ID = 22;
     private static final String[] REQUESTED_PERMISSIONS =
-            {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.MODIFY_AUDIO_SETTINGS};
+            {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
 
     // View
     private ImageView imageViewJoinBtn;
@@ -210,14 +210,13 @@ public class MainActivity extends AppCompatActivity {
                     if(ContextCompat.checkSelfPermission(context, REQUESTED_PERMISSIONS[0])
                             + ContextCompat.checkSelfPermission(
                             context, REQUESTED_PERMISSIONS[1])
-                            + ContextCompat.checkSelfPermission(
-                            context, REQUESTED_PERMISSIONS[2])
                             == PackageManager.PERMISSION_GRANTED) {
                         try {
                         initAgoraEngine();
-//                        setupSession();
-                            mRtcEngine.setDefaultAudioRoutetoSpeakerphone(true);
-                            audioMuted = false;
+
+                        // Call setupSession() before joinChannel()
+                        setupSession();
+
                         joinChannel();}
                         catch (Exception e) {
                             Log.e(LOG_CAT, "error init engine");
@@ -295,8 +294,6 @@ public class MainActivity extends AppCompatActivity {
         if(ContextCompat.checkSelfPermission(this, REQUESTED_PERMISSIONS[0])
                 + ContextCompat.checkSelfPermission(
                 this, REQUESTED_PERMISSIONS[1])
-                + ContextCompat.checkSelfPermission(
-                context, REQUESTED_PERMISSIONS[2])
                 != PackageManager.PERMISSION_GRANTED) {
 //            int grant = ContextCompat.checkSelfPermission(this, REQUESTED_PERMISSIONS[0])
 //                    + ContextCompat.checkSelfPermission(
@@ -320,6 +317,7 @@ public class MainActivity extends AppCompatActivity {
 
                     try {
                         initAgoraEngine();
+                        setupSession();
 
                     } catch (Exception e) {
                         Log.e(LOG_CAT, "error init engine");
@@ -327,10 +325,7 @@ public class MainActivity extends AppCompatActivity {
                         throw new RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e));
                     }
 
-                    if (mRtcEngine != null) {
-                        mRtcEngine.setDefaultAudioRoutetoSpeakerphone(true);
-                        audioMuted = false;
-                    }
+
 
                 }
                 break;
@@ -351,11 +346,6 @@ public class MainActivity extends AppCompatActivity {
 
         mRtcEngine.enableVideo();
 
-//        mRtcEngine.enableAudio();
-
-        mRtcEngine.setDefaultAudioRoutetoSpeakerphone(true);
-
-
 
         // by default videoMuted is assigned false
         // the line below to dictates whether user joins with video muted or not
@@ -365,6 +355,9 @@ public class MainActivity extends AppCompatActivity {
                 VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_30,
                 VideoEncoderConfiguration.STANDARD_BITRATE,
                 VideoEncoderConfiguration.ORIENTATION_MODE.ORIENTATION_MODE_FIXED_PORTRAIT));
+
+        mRtcEngine.setDefaultAudioRoutetoSpeakerphone(true);
+        audioMuted = false;
     }
 
     // engine automatically assign uid to local user
