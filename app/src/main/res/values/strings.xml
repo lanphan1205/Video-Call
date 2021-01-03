@@ -1,10 +1,7 @@
 <resources>
     <string name="app_name">Video Call</string>
     <string name="agora_app_id">68e47c39af7d4061b9b02c1a06d46f90</string>
-<!--    <string name="app_temp_token">00668e47c39af7d4061b9b02c1a06d46f90IABQf02xR7J2hcRwo1YCkxwwmTcjU8pzcQ3ZkZiVXBeAY2UB+GMAAAAAEACpE93IzI/tXwEAAQDLj+1f</string>-->
-<!--    <string name="app_temp_token">00668e47c39af7d4061b9b02c1a06d46f90IADmOiLWbhbVywmRoOLY1PLn5fz/qRDH9u481WVDHVqJZWUB+GMAAAAAEACpE93Igf/uXwEAAQB//+5f</string>-->
-<!--    <string name="app_temp_token">00668e47c39af7d4061b9b02c1a06d46f90IADb/t4DJuxfV3eJgvSj5tlFBwXNYmKiAwLbd3PpCzWQGWUB+GMAAAAAEACpE93IqHfwXwEAAQCpd/Bf</string>-->
-    <string name="app_temp_token">00668e47c39af7d4061b9b02c1a06d46f90IADRr360fc4vn+j+fByaW+prw2I2HLtWTgSpL35WbQne9GUB+GMAAAAAEACpE93Iy8XxXwEAAQDKxfFf</string>
+    <string name="app_temp_token">00668e47c39af7d4061b9b02c1a06d46f90IACFpmWxIfKVBhFTZoT8Nh/7JPzobLdghhR9P17y0q1oR2UB+GMAAAAAEACpE93IL//yXwEAAQAw//Jf</string>
 
 
 </resources>

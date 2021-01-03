@@ -57,8 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
                         onLocalUserJoinChannelSuccess();
 
-//                        mRtcEngine.muteLocalVideoStream(false);
-
+                        Log.i(LOG_CAT, "Channel name: " + channel + ", " + "Local uid: " + String.valueOf(uid&0xffffffffL));
                     }
                 });
             }
@@ -100,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
                         onRemoteUserJoinChannelSuccess();
 
                         setupRemoteVideoFeed(uid);
+
+                        Log.i(LOG_CAT, "Remote uid: " + String.valueOf(uid&0xffffffffL));
 
                         // Suggestion for voice call only, call onPauseRemoteVideoFeed() and onPauseLocalVideoFeed().
                         // Call mode is dictated by setupSession on launch activity and onclick call button (be it voice call or video call), ideally
