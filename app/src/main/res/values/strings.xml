@@ -1,7 +1,10 @@
 <resources>
     <string name="app_name">Video Call</string>
     <string name="agora_app_id">68e47c39af7d4061b9b02c1a06d46f90</string>
-    <string name="app_temp_token">00668e47c39af7d4061b9b02c1a06d46f90IACFpmWxIfKVBhFTZoT8Nh/7JPzobLdghhR9P17y0q1oR2UB+GMAAAAAEACpE93IL//yXwEAAQAw//Jf</string>
+    <string name="agora_app_certificate">aadb9423c91a442c9c30232c13c9d1cb</string>
+    <string name="app_channel_name">Test Channel 2</string>
+    <integer name="app_channel_expiration_time_in_seconds">180</integer>
+    <string name="app_temp_token">00668e47c39af7d4061b9b02c1a06d46f90IADRr360fc4vn+j+fByaW+prw2I2HLtWTgSpL35WbQne9GUB+GMAAAAAEACpE93Iy8XxXwEAAQDKxfFf</string>
 
 
 </resources>

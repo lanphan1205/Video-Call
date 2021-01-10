@@ -2,10 +2,8 @@ package com.example.videocall;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -18,6 +16,8 @@ import android.widget.ImageView;
 import io.agora.rtc.Constants;
 import io.agora.rtc.IRtcEngineEventHandler;
 import io.agora.rtc.RtcEngine;
+import io.agora.media.RtcTokenBuilder;
+import io.agora.media.RtcTokenBuilder.Role;
 import io.agora.rtc.video.VideoCanvas;
 import io.agora.rtc.video.VideoEncoderConfiguration;
 
@@ -40,6 +40,17 @@ public class MainActivity extends AppCompatActivity {
     // Click Logic
     private boolean videoMuted;
     private boolean audioMuted;
+
+    // Token Generation Parameters
+//    private String appID;
+//    private String appCertificate;
+//    private String appChannelName;
+//    private Role userRole;
+//    private Integer expirationTimeInSeconds;
+
+    // Token
+    private String channelToken;
+
 
     // engine and event handler
 
@@ -172,7 +183,12 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-
+        @Override
+        public void onTokenPrivilegeWillExpire(String token) {
+            Log.d(LOG_CAT, "Token expires in 30 seconds. Request a new token");
+            super.onTokenPrivilegeWillExpire(token);
+            mRtcEngine.renewToken(getToken());
+        }
     };
 
     @Override
@@ -204,9 +220,10 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(LOG_CAT, "Press join btn");
                 if (mRtcEngine != null) {
 
-                    joinChannel();
+                    joinChannel(getToken(), getString(R.string.app_channel_name));
                 }
-                // on second start up, check for permission, if granted, init engine
+                // on second start up, check for permission, if granted, init engine, otherwise, do nothing
+                // For better code, use SharedPreferences to retrieve mRtcEngine
                 else {
                     if(ContextCompat.checkSelfPermission(context, REQUESTED_PERMISSIONS[0])
                             + ContextCompat.checkSelfPermission(
@@ -218,7 +235,8 @@ public class MainActivity extends AppCompatActivity {
                         // Call setupSession() before joinChannel()
                         setupSession();
 
-                        joinChannel();}
+                        joinChannel(getToken(), getString(R.string.app_channel_name));
+                        }
                         catch (Exception e) {
                             Log.e(LOG_CAT, "error init engine");
                         }
@@ -277,7 +295,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
 
     }
 
@@ -362,8 +379,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // engine automatically assign uid to local user
-    private void joinChannel() {
-        mRtcEngine.joinChannel(getString(R.string.app_temp_token), "Test Channel 2", "Extra Optional Data", 0);
+    private void joinChannel(String token, String name) {
+//        mRtcEngine.joinChannel(getString(R.string.app_temp_token), "Test Channel 2", "Extra Optional Data", 0);
+
+        mRtcEngine.joinChannel(token, name, "Extra Optional Data", 0);
+
     }
 
     private void leaveChannel() {
@@ -468,17 +488,10 @@ public class MainActivity extends AppCompatActivity {
         onWaitForRemoteUser();
         setupLocalVideoFeed();
 
-//        mRtcEngine.enableAudio();
-        // dictate whether we want to cover the surface view with image view with black bg
-//        if (videoMuted) {
-//            onPauseLocalVideoFeed();
-//        }
         int volume1 = 400;
         int volume2 = 400;
 // Sets the playback audio level of all remote users.
         mRtcEngine.adjustPlaybackSignalVolume(volume1);
-// Sets the playback audio level of a specified remote user.
-//        mRtcEngine.adjustUserPlaybackSignalVolume(uid, volume);
 
 // Sets the volume of the recorded signal.
         mRtcEngine.adjustRecordingSignalVolume(volume2);
@@ -492,18 +505,21 @@ public class MainActivity extends AppCompatActivity {
         Log.d(LOG_CAT, "speaker phone enabled: " + speakerEnabled); // want to see true
 
 //        mRtcEngine.enableInEarMonitoring(true);
+
         int volume3 = 25;
         // Sets the in-ear monitoring volume.
         mRtcEngine.setInEarMonitoringVolume(volume3);
 
-//        int volume4 = 400;
-//        mRtcEngine.adjustAudioMixingPlayoutVolume(volume4);
-//
-//        int volume5 = 400;
-//        mRtcEngine.adjustAudioMixingPublishVolume(volume5);
+    }
 
-//        mRtcEngine.adjustAudioMixingVolume(400);
-
-
+    private String getToken() {
+        String appID = getString(R.string.agora_app_id);
+        String appCertificate = getString(R.string.agora_app_certificate);
+        String channelName = getString(R.string.app_channel_name);
+        Integer expirationTimeInSeconds = getResources().getInteger(R.integer.app_channel_expiration_time_in_seconds);
+        int uid = 0;
+        Role role = Role.Role_Publisher;
+        int timeStamps = (int) System.currentTimeMillis() / 1000 + expirationTimeInSeconds;
+        return new RtcTokenBuilder().buildTokenWithUid(appID, appCertificate, channelName, uid, role, timeStamps);
     }
 }
