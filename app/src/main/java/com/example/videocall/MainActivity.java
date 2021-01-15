@@ -220,7 +220,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(LOG_CAT, "Press join btn");
                 if (mRtcEngine != null) {
 
-                    joinChannel(getToken(), getString(R.string.app_channel_name));
+//                    joinChannel(getToken(), getString(R.string.app_channel_name));
+                    joinChannel(getString(R.string.app_temp_token), getString(R.string.app_channel_name));
                 }
                 // on second start up, check for permission, if granted, init engine, otherwise, do nothing
                 // For better code, use SharedPreferences to retrieve mRtcEngine
@@ -235,7 +236,8 @@ public class MainActivity extends AppCompatActivity {
                         // Call setupSession() before joinChannel()
                         setupSession();
 
-                        joinChannel(getToken(), getString(R.string.app_channel_name));
+//                        joinChannel(getToken(), getString(R.string.app_channel_name));
+                            joinChannel(getString(R.string.app_temp_token), getString(R.string.app_channel_name));
                         }
                         catch (Exception e) {
                             Log.e(LOG_CAT, "error init engine");

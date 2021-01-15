@@ -4,7 +4,7 @@
     <string name="agora_app_certificate">aadb9423c91a442c9c30232c13c9d1cb</string>
     <string name="app_channel_name">Test Channel 2</string>
     <integer name="app_channel_expiration_time_in_seconds">180</integer>
-    <string name="app_temp_token">00668e47c39af7d4061b9b02c1a06d46f90IADRr360fc4vn+j+fByaW+prw2I2HLtWTgSpL35WbQne9GUB+GMAAAAAEACpE93Iy8XxXwEAAQDKxfFf</string>
+    <string name="app_temp_token">00668e47c39af7d4061b9b02c1a06d46f90IADeD8uXeCN9ks4oP7NVl4Cy2edgBgB1IKWe7gmZi2OmOGUB+GMAAAAAEACpE93IfNcCYAEAAQB41wJg</string>
 
 
 </resources>
