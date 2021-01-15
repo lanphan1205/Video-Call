@@ -2,7 +2,10 @@ package com.example.lib;
 
 public class MyClass {
     public static void main(String[] args) {
-        System.out.println(Direction.EAST.getAngle());
+//        System.out.println(Direction.EAST.getAngle());
+        int expirationTimeInSeconds = 3600;
+        int timeStamps = (int) System.currentTimeMillis() / 1000 + expirationTimeInSeconds;
+        System.out.println(timeStamps);
 
     }
 

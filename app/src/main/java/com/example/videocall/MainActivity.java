@@ -189,6 +189,8 @@ public class MainActivity extends AppCompatActivity {
             super.onTokenPrivilegeWillExpire(token);
             mRtcEngine.renewToken(getToken());
         }
+
+
     };
 
     @Override
@@ -220,8 +222,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(LOG_CAT, "Press join btn");
                 if (mRtcEngine != null) {
 
-//                    joinChannel(getToken(), getString(R.string.app_channel_name));
-                    joinChannel(getString(R.string.app_temp_token), getString(R.string.app_channel_name));
+                    joinChannel(getToken(), getString(R.string.app_channel_name));
+//                    joinChannel(getString(R.string.app_temp_token), getString(R.string.app_channel_name));
                 }
                 // on second start up, check for permission, if granted, init engine, otherwise, do nothing
                 // For better code, use SharedPreferences to retrieve mRtcEngine
@@ -236,8 +238,8 @@ public class MainActivity extends AppCompatActivity {
                         // Call setupSession() before joinChannel()
                         setupSession();
 
-//                        joinChannel(getToken(), getString(R.string.app_channel_name));
-                            joinChannel(getString(R.string.app_temp_token), getString(R.string.app_channel_name));
+                        joinChannel(getToken(), getString(R.string.app_channel_name));
+//                            joinChannel(getString(R.string.app_temp_token), getString(R.string.app_channel_name));
                         }
                         catch (Exception e) {
                             Log.e(LOG_CAT, "error init engine");
@@ -521,7 +523,7 @@ public class MainActivity extends AppCompatActivity {
         Integer expirationTimeInSeconds = getResources().getInteger(R.integer.app_channel_expiration_time_in_seconds);
         int uid = 0;
         Role role = Role.Role_Publisher;
-        int timeStamps = (int) System.currentTimeMillis() / 1000 + expirationTimeInSeconds;
+        int timeStamps = (int) (System.currentTimeMillis() / 1000 + expirationTimeInSeconds);
         return new RtcTokenBuilder().buildTokenWithUid(appID, appCertificate, channelName, uid, role, timeStamps);
     }
 }
