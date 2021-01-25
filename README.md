@@ -5,14 +5,14 @@ io.agora.rtc:full-sdk
 
 ### Requirements:
 
-* Users have options to mute video and/or voice. 
+* Users have options to mute video and/or voice
 
 * Receiving users can only see black screen and/or cannot hear audio stream, respectively
 
 * Call is not to be interrupted unless user decides to leave the call
 
 
-### Contributors
+### Contributors:
 @67Samuel
 
 
